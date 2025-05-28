@@ -1,125 +1,149 @@
 import React, { useState, useEffect } from "react";
-import {View, Text, TouchableOpacity, Modal, Alert,} from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  Alert,
+  TextInput,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NavigationProp } from "@react-navigation/native";
 import { styles } from "./styles";
 import { api } from "../../services/api";
 
-
-
 type InfoMesa = {
   nome_responsavel: string;
   data: string;
   hora: string;
-  qtd_pessoas: number;
+  qtd_pessoas: string;
 };
 
-const infoDasMesas: Record<number, InfoMesa> = {
-  2: {
-    nome_responsavel: "Maria Oliveira",
-    data: "2025-05-19",
-    hora: "18:00",
-    qtd_pessoas: 2,
-  },
-  5: {
-    nome_responsavel: "Carlos Souza",
-    data: "2025-05-19",
-    hora: "19:00",
-    qtd_pessoas: 4,
-  },
-  8: {
-    nome_responsavel: "Ana Paula",
-    data: "2025-05-19",
-    hora: "20:00",
-    qtd_pessoas: 6,
-  },
-};
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const datePart = dateStr.split("T")[0].split(" ")[0];
+  return datePart.replace(/-/g, "/");
+}
+
+function formatHour(hourStr: string): string {
+  if (!hourStr) return "";
+  return hourStr.substring(0, 5);
+}
 
 export default function Atendente() {
   const navigation = useNavigation<NavigationProp<any>>();
+
   const [selectedMesa, setSelectedMesa] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [mesasConfirmadas, setMesasConfirmadas] = useState<number[]>([]);
 
-   useEffect(() => {
-  async function carregarMesasReservadas() {
-    try {
-      const response = await api.get('/reservas');
-      const reservas = response.data; 
+  const [info, setInfo] = useState<InfoMesa>({
+    nome_responsavel: "",
+    data: "",
+    hora: "",
+    qtd_pessoas: "",
+  });
 
-      const mesasReservadasIds = reservas.map((reserva: any) => reserva.mesa_id);
-
-      setMesasConfirmadas(mesasReservadasIds);
-    } catch (error) {
-      console.error("Erro ao carregar mesas reservadas:", error);
+  useEffect(() => {
+    async function carregarMesasReservadas() {
+      try {
+        const response = await api.get("/reservas");
+        const reservas = response.data;
+        const mesasReservadasIds = reservas.map((reserva: any) => reserva.mesa_id);
+        setMesasConfirmadas(mesasReservadasIds);
+      } catch (error) {
+        console.error("Erro ao carregar mesas reservadas:", error);
+      }
     }
-  }
 
-  carregarMesasReservadas();
-}, []);
-
-const handleMesaPress = (mesa: number) => {
-  setSelectedMesa(mesa);
-  setModalVisible(true);
-};
+    carregarMesasReservadas();
+  }, []);
 
   const isMesaConfirmada = (mesa: number) => mesasConfirmadas.includes(mesa);
 
+  const handleMesaPress = async (mesa: number) => {
+    setSelectedMesa(mesa);
+
+    if (isMesaConfirmada(mesa)) {
+      try {
+        const response = await api.get("/reservas");
+        const reserva = response.data.find((r: any) => r.mesa_id === mesa);
+
+        if (reserva) {
+          setInfo({
+            nome_responsavel: reserva.nome_responsavel,
+            data: formatDate(reserva.data),
+            hora: formatHour(reserva.hora),
+            qtd_pessoas: reserva.qtd_pessoas.toString(),
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar reserva:", error);
+      }
+    } else {
+      setInfo({
+        nome_responsavel: "",
+        data: "",
+        hora: "",
+        qtd_pessoas: "",
+      });
+    }
+
+    setModalVisible(true);
+  };
+
   const confirmarOuCancelarMesa = async () => {
-  if (selectedMesa === null) return;
+    if (selectedMesa === null) return;
 
-  if (isMesaConfirmada(selectedMesa)) {
-    try {
-  
-      const response = await api.get("/reservas");
-      const reservas = response.data;
+    if (isMesaConfirmada(selectedMesa)) {
+      // Cancelar reserva
+      try {
+        const response = await api.get("/reservas");
+        const reservas = response.data;
+        const reserva = reservas.find((r: any) => r.mesa_id === selectedMesa);
 
-      const reserva = reservas.find(
-        (r: any) => r.mesa_id === selectedMesa
-      );
+        if (!reserva) {
+          Alert.alert("Erro", "Reserva não encontrada.");
+          return;
+        }
 
-      if (!reserva) {
-        Alert.alert("Erro", "Reserva não encontrada.");
+        await api.delete(`/reservas/${reserva.id}`);
+
+        const novasReservas = await api.get("/reservas");
+        const mesasReservadasIds = novasReservas.data.map((r: any) => r.mesa_id);
+        setMesasConfirmadas(mesasReservadasIds);
+
+        Alert.alert("Sucesso", "Reserva cancelada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao cancelar reserva:", error);
+        Alert.alert("Erro", "Não foi possível cancelar a reserva.");
+      }
+    } else {
+      if (!info.nome_responsavel || !info.data || !info.hora || !info.qtd_pessoas) {
+        Alert.alert("Atenção", "Preencha todos os campos.");
         return;
       }
+const dataFormatada = info.data.replace(/\//g, "-")
+      try {
+        await api.post("/reservas", {
+          mesa_id: selectedMesa,
+          data: dataFormatada,
+          hora: info.hora,
+          nome_responsavel: info.nome_responsavel,
+          qtd_pessoas: parseInt(info.qtd_pessoas, 10),
+          garcom_id: null,
+        });
 
-
-      await api.delete(`/reservas/${reserva.id}`);
-
-    
-     const novasReservas = await api.get("/reservas");
-const mesasReservadasIds = novasReservas.data.map((r: any) => r.mesa_id);
-setMesasConfirmadas(mesasReservadasIds);
-
-      Alert.alert("Sucesso", "Reserva cancelada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao cancelar reserva:", error);
-      Alert.alert("Erro", "Não foi possível cancelar a reserva.");
+        setMesasConfirmadas((prev) => [...prev, selectedMesa]);
+        Alert.alert("Sucesso", "Reserva criada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao reservar mesa:", error);
+        Alert.alert("Erro", "Não foi possível reservar a mesa.");
+      }
     }
-  } else {
-    const info = infoDasMesas[selectedMesa];
-    try {
-      await api.post("/reservas", {
-        mesa_id: selectedMesa,
-        data: info.data,
-        hora: info.hora,
-        nome_responsavel: info.nome_responsavel,
-        qtd_pessoas: info.qtd_pessoas,
-        garcom_id: null,
-      });
 
-      setMesasConfirmadas((prev) => [...prev, selectedMesa]);
-
-      Alert.alert("Sucesso", "Reserva confirmada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao reservar mesa:", error);
-      Alert.alert("Erro", "Não foi possível reservar a mesa.");
-    }
-  }
-
-  setModalVisible(false);
-};
-
+    setModalVisible(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -133,10 +157,7 @@ setMesasConfirmadas(mesasReservadasIds);
           return (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.mesa,
-                confirmada && { backgroundColor: "#ccc" }, 
-              ]}
+              style={[styles.mesa, confirmada && { backgroundColor: "#ccc" }]}
               onPress={() => handleMesaPress(mesaNumero)}
             >
               <Text style={styles.mesaText}>{mesaNumero}</Text>
@@ -145,7 +166,6 @@ setMesasConfirmadas(mesasReservadasIds);
         })}
       </View>
 
-      {/* Modal com informações da mesa */}
       <Modal
         visible={modalVisible}
         transparent
@@ -154,45 +174,100 @@ setMesasConfirmadas(mesasReservadasIds);
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {selectedMesa && infoDasMesas[selectedMesa] ? (
+            {selectedMesa !== null && (
               <>
                 <Text style={styles.modalTitle}>Mesa {selectedMesa}</Text>
-                <Text>Responsável: {infoDasMesas[selectedMesa].nome_responsavel}</Text>
-                <Text>Data: {infoDasMesas[selectedMesa].data}</Text>
-                <Text>Hora: {infoDasMesas[selectedMesa].hora}</Text>
-                <Text>Pessoas: {infoDasMesas[selectedMesa].qtd_pessoas}</Text>
 
-       <TouchableOpacity
-        style={
-        isMesaConfirmada(selectedMesa)
-         ? styles.cancelButton 
-          : styles.closeButton   
-        }
-         onPress={confirmarOuCancelarMesa}
-       >
-  <Text style={{ color: "#fff", fontWeight: "bold" }}>
-    {isMesaConfirmada(selectedMesa) ? "Cancelar Reserva" : "Confirmar Reserva"}
-  </Text>
-</TouchableOpacity>
+                {isMesaConfirmada(selectedMesa) ? (
+                  <>
+                    <Text>Responsável: {info.nome_responsavel}</Text>
+                    <Text>Data: {info.data}</Text>
+                    <Text>Hora: {info.hora}</Text>
+                    <Text>Pessoas: {info.qtd_pessoas}</Text>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={confirmarOuCancelarMesa}
+                    >
+                      <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                        Cancelar Reserva
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <TextInput
+                      placeholder="Nome do responsável"
+                      value={info.nome_responsavel}
+                      onChangeText={(text) =>
+                        setInfo({ ...info, nome_responsavel: text })
+                      }
+                      style={styles.input}
+                    />
+                    <TextInput
+  placeholder="Data (AAAA/MM/DD)"
+  value={info.data}
+  onChangeText={(text) => {
+    let cleaned = text.replace(/\D/g, ""); 
+    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
 
-              </>
-            ) : (
-              <>
-                <Text style={styles.modalTitle}>Mesa {selectedMesa}</Text>
-                <Text style={{ marginTop: 10 }}>Nao possui reserva no momento.</Text>
-                <TouchableOpacity
-                  style={[styles.closeButton, { backgroundColor: "#e74c3c" }]}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={{ color: "#fff" }}>Fechar</Text>
-                </TouchableOpacity>
+    let masked = cleaned;
+    if (cleaned.length > 6) {
+      masked = `${cleaned.slice(0, 4)}/${cleaned.slice(4, 6)}/${cleaned.slice(6)}`;
+    } else if (cleaned.length > 4) {
+      masked = `${cleaned.slice(0, 4)}/${cleaned.slice(4)}`;
+    }
+
+    setInfo({ ...info, data: masked });
+  }}
+  maxLength={10}
+  keyboardType="numeric"
+  style={styles.input}
+/>
+
+                    <TextInput
+                      placeholder="Hora (HH:MM)"
+                      value={info.hora}
+                      onChangeText={(text) => {
+                        let cleaned = text.replace(/\D/g, "");
+                        if (cleaned.length > 4) {
+                          cleaned = cleaned.slice(0, 4);
+                        }
+                        if (cleaned.length > 2) {
+                          cleaned = cleaned.slice(0, 2) + ":" + cleaned.slice(2);
+                        }
+                        setInfo({ ...info, hora: cleaned });
+                      }}
+                      maxLength={5}
+                      keyboardType="numeric"
+                      style={styles.input}
+                    />
+                    <TextInput
+                      placeholder="Quantidade de pessoas"
+                      keyboardType="numeric"
+                      value={info.qtd_pessoas}
+                      onChangeText={(text) => {
+                        if (/^\d*$/.test(text)) {
+                          setInfo({ ...info, qtd_pessoas: text });
+                        }
+                      }}
+                      style={styles.input}
+                    />
+                    <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={confirmarOuCancelarMesa}
+                    >
+                      <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                        Criar Reserva
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </>
             )}
           </View>
         </View>
       </Modal>
 
-      {/* Botão de voltar */}
       <TouchableOpacity
         style={styles.returnButton}
         onPress={() => navigation.navigate("Login")}

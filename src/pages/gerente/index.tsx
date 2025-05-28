@@ -15,7 +15,7 @@ type Garcom = {
 };
 
 type Props = {
-  navigation: any; // tipagem simples, você pode melhorar se quiser
+  navigation: any; 
 };
 
 export default function Gerente({ navigation }: Props) {

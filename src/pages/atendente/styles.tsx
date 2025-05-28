@@ -83,4 +83,12 @@ returnButtonText: {
   fontWeight: "bold",
   fontSize: 16,
 },
+input: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  padding: 10,
+  borderRadius: 5,
+  marginBottom: 10,
+  backgroundColor: "#fff",
+},
 });
