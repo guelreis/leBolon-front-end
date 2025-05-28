@@ -54,21 +54,13 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
- closeButton: {
-  marginTop: 15,
-  backgroundColor: "#27ae60",  // verde
-  paddingVertical: 10,
-  paddingHorizontal: 20,
-  borderRadius: 8,
-},
-
-cancelButton: {
-  marginTop: 15,
-  backgroundColor: "#e74c3c",  // vermelho
-  paddingVertical: 10,
-  paddingHorizontal: 20,
-  borderRadius: 8,
-},
+  closeButton: {
+    marginTop: 15,
+    backgroundColor: "#8e44ad",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
  returnButton: {
   marginTop: 70,
   backgroundColor: "#333",

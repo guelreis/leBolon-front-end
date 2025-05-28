@@ -1,14 +1,39 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import {View, Text, TouchableOpacity, Modal, Alert,} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NavigationProp } from "@react-navigation/native";
 import { styles } from "./styles";
+import { api } from "../../services/api";
+
+
+
+type InfoMesa = {
+  nome_responsavel: string;
+  data: string;
+  hora: string;
+  qtd_pessoas: number;
+};
+
+const infoDasMesas: Record<number, InfoMesa> = {
+  2: {
+    nome_responsavel: "Maria Oliveira",
+    data: "2025-05-19",
+    hora: "18:00",
+    qtd_pessoas: 2,
+  },
+  5: {
+    nome_responsavel: "Carlos Souza",
+    data: "2025-05-19",
+    hora: "19:00",
+    qtd_pessoas: 4,
+  },
+  8: {
+    nome_responsavel: "Ana Paula",
+    data: "2025-05-19",
+    hora: "20:00",
+    qtd_pessoas: 6,
+  },
+};
 
 export default function Atendente() {
   const navigation = useNavigation<NavigationProp<any>>();
@@ -16,38 +41,101 @@ export default function Atendente() {
   const [modalVisible, setModalVisible] = useState(false);
   const [mesasConfirmadas, setMesasConfirmadas] = useState<number[]>([]);
 
-  const handleMesaPress = (mesa: number) => {
-    setSelectedMesa(mesa);
-    setModalVisible(true);
-  };
+   useEffect(() => {
+  async function carregarMesasReservadas() {
+    try {
+      const response = await api.get('/reservas');
+      const reservas = response.data; 
+
+      const mesasReservadasIds = reservas.map((reserva: any) => reserva.mesa_id);
+
+      setMesasConfirmadas(mesasReservadasIds);
+    } catch (error) {
+      console.error("Erro ao carregar mesas reservadas:", error);
+    }
+  }
+
+  carregarMesasReservadas();
+}, []);
+
+const handleMesaPress = (mesa: number) => {
+  setSelectedMesa(mesa);
+  setModalVisible(true);
+};
 
   const isMesaConfirmada = (mesa: number) => mesasConfirmadas.includes(mesa);
 
-  const confirmarOuCancelarMesa = () => {
-    if (selectedMesa !== null) {
-      if (isMesaConfirmada(selectedMesa)) {
-        setMesasConfirmadas(mesasConfirmadas.filter(m => m !== selectedMesa));
-      } else {
-        setMesasConfirmadas([...mesasConfirmadas, selectedMesa]);
+  const confirmarOuCancelarMesa = async () => {
+  if (selectedMesa === null) return;
+
+  if (isMesaConfirmada(selectedMesa)) {
+    try {
+  
+      const response = await api.get("/reservas");
+      const reservas = response.data;
+
+      const reserva = reservas.find(
+        (r: any) => r.mesa_id === selectedMesa
+      );
+
+      if (!reserva) {
+        Alert.alert("Erro", "Reserva não encontrada.");
+        return;
       }
+
+
+      await api.delete(`/reservas/${reserva.id}`);
+
+    
+     const novasReservas = await api.get("/reservas");
+const mesasReservadasIds = novasReservas.data.map((r: any) => r.mesa_id);
+setMesasConfirmadas(mesasReservadasIds);
+
+      Alert.alert("Sucesso", "Reserva cancelada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao cancelar reserva:", error);
+      Alert.alert("Erro", "Não foi possível cancelar a reserva.");
     }
-    setModalVisible(false);
-  };
+  } else {
+    const info = infoDasMesas[selectedMesa];
+    try {
+      await api.post("/reservas", {
+        mesa_id: selectedMesa,
+        data: info.data,
+        hora: info.hora,
+        nome_responsavel: info.nome_responsavel,
+        qtd_pessoas: info.qtd_pessoas,
+        garcom_id: null,
+      });
+
+      setMesasConfirmadas((prev) => [...prev, selectedMesa]);
+
+      Alert.alert("Sucesso", "Reserva confirmada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao reservar mesa:", error);
+      Alert.alert("Erro", "Não foi possível reservar a mesa.");
+    }
+  }
+
+  setModalVisible(false);
+};
+
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Atendente</Text>
 
       <View style={styles.grid}>
-        {[...Array(12)].map((_, index) => {
+        {[...Array(10)].map((_, index) => {
           const mesaNumero = index + 1;
           const confirmada = isMesaConfirmada(mesaNumero);
+
           return (
             <TouchableOpacity
               key={index}
               style={[
                 styles.mesa,
-                confirmada && { backgroundColor: "#ccc" }, // Cor cinza se confirmada
+                confirmada && { backgroundColor: "#ccc" }, 
               ]}
               onPress={() => handleMesaPress(mesaNumero)}
             >
@@ -57,6 +145,7 @@ export default function Atendente() {
         })}
       </View>
 
+      {/* Modal com informações da mesa */}
       <Modal
         visible={modalVisible}
         transparent
@@ -65,25 +154,45 @@ export default function Atendente() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Mesa {selectedMesa}</Text>
-            <Text>Responsável: João da Silva</Text>
-            <Text>Data: 19/05/2025</Text>
-            <Text>Hora: 18:30</Text>
-            <Text>Número de pessoas: 4</Text>
+            {selectedMesa && infoDasMesas[selectedMesa] ? (
+              <>
+                <Text style={styles.modalTitle}>Mesa {selectedMesa}</Text>
+                <Text>Responsável: {infoDasMesas[selectedMesa].nome_responsavel}</Text>
+                <Text>Data: {infoDasMesas[selectedMesa].data}</Text>
+                <Text>Hora: {infoDasMesas[selectedMesa].hora}</Text>
+                <Text>Pessoas: {infoDasMesas[selectedMesa].qtd_pessoas}</Text>
 
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={confirmarOuCancelarMesa}
-            >
-              <Text style={{ color: "#fff" }}>
-                {isMesaConfirmada(selectedMesa!) ? "Cancelar" : "Confirmar"}
-              </Text>
-            </TouchableOpacity>
+       <TouchableOpacity
+        style={
+        isMesaConfirmada(selectedMesa)
+         ? styles.cancelButton 
+          : styles.closeButton   
+        }
+         onPress={confirmarOuCancelarMesa}
+       >
+  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+    {isMesaConfirmada(selectedMesa) ? "Cancelar Reserva" : "Confirmar Reserva"}
+  </Text>
+</TouchableOpacity>
+
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>Mesa {selectedMesa}</Text>
+                <Text style={{ marginTop: 10 }}>Nao possui reserva no momento.</Text>
+                <TouchableOpacity
+                  style={[styles.closeButton, { backgroundColor: "#e74c3c" }]}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={{ color: "#fff" }}>Fechar</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </Modal>
 
-      {/* Botão de voltar para a tela de login */}
+      {/* Botão de voltar */}
       <TouchableOpacity
         style={styles.returnButton}
         onPress={() => navigation.navigate("Login")}

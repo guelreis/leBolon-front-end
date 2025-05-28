@@ -14,12 +14,12 @@ export const style = StyleSheet.create({
   logo: {
     fontSize: 32,
     fontWeight: "bold",
-    marginBottom: 250, // espaço entre logo e título
+    marginBottom: 250, 
     textAlign: "center",
     color: "#333",
   },
 
-  // Texto Login (abaixo do logo)
+
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -27,7 +27,6 @@ export const style = StyleSheet.create({
     color: "#555",
   },
 
-  // Campo de texto para digitar ID
   input: {
     width: "80%", 
     height: 45,
@@ -40,7 +39,7 @@ export const style = StyleSheet.create({
     backgroundColor: "#f9f9f9",
   },
 
-  // Botão personalizado
+
   button: {
     backgroundColor: "#007bff",
     width: "80%",
@@ -49,11 +48,19 @@ export const style = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Texto dentro do botão
+
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
+  infoText: {
+  marginTop: 200,
+  fontSize: 14,
+  color: '#777',
+  textAlign: 'center',
+  paddingHorizontal: 20,
+},
+
 
 });

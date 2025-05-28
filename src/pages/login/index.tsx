@@ -6,6 +6,8 @@ import { style } from './styles';
 type RootStackParamList = {
   Login: undefined;
   Atendente: undefined;
+  Garcom: undefined;
+  Gerente: undefined;
 };
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -23,10 +25,10 @@ export default function Login({ navigation }: LoginProps) {
       navigation.navigate('Atendente');
     } else if (id === '2') {
       Alert.alert('Garçom', 'Você é um garçom.');
-      // navigation.navigate('Garcom'); // se existir
+     navigation.navigate('Garcom');
     } else if (id === '3') {
       Alert.alert('Gerente', 'Você é um gerente.');
-      // navigation.navigate('Gerente'); // se existir
+     navigation.navigate('Gerente');
     } else {
       Alert.alert('Erro', 'ID inválido. Tente novamente.');
     }
@@ -46,6 +48,11 @@ export default function Login({ navigation }: LoginProps) {
       <TouchableOpacity style={style.button} onPress={handleLogin}>
         <Text style={style.buttonText}>Entrar</Text>
       </TouchableOpacity>
+
+      {/* Texto explicativo embaixo do botão */}
+      <Text style={style.infoText}>
+        Digite 1 para Atendente, 2 para Garçom, 3 para Gerente
+      </Text>
     </View>
   );
 }
