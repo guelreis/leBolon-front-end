@@ -10,14 +10,18 @@ export const style = StyleSheet.create({
     alignItems: "center", 
   },
 
-  
-  logo: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 250, 
-    textAlign: "center",
-    color: "#333",
-  },
+
+logo: {
+fontFamily: "Palatino, Georgia, serif",
+  fontSize: 32,
+  fontWeight: "bold",
+  marginTop: 150,
+  marginBottom: 100,
+  textAlign: "center",
+  color: "#cf0e0e",
+  fontStyle: "italic",
+},
+
 
 
   title: {

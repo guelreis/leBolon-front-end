@@ -5,8 +5,12 @@ import { api } from '../../services/api';
 type Mesa = {
   id: string;
   numero: number;
-  reservadoPor?: string;
+  nome_responsavel?: string;
+  data?: string;
+  hora?: string;
+  qtd_pessoas?: number;
 };
+
 
 type Garcom = {
   id: string;
@@ -23,53 +27,60 @@ export default function Gerente({ navigation }: Props) {
   const [garcons, setGarcons] = useState<Garcom[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function carregarDados() {
-      try {
-        const responseMesas = await api.get<Mesa[]>('/mesas/reservadas');
-        const responseGarcons = await api.get<{ id: number; nome: string }[]>('/garcons');
+useEffect(() => {
+  async function carregarDados() {
+    try {
+      const responseMesas = await api.get<Mesa[]>('/mesas/reservadas');
+      const responseReservas = await api.get<any[]>('/reservas');
+      const responseGarcons = await api.get<{ id: number; nome: string }[]>('/garcons');
 
-        const mesas = responseMesas.data.map(mesa => ({
+      // Juntando as reservas com as mesas reservadas
+      const mesasComReservas: Mesa[] = responseMesas.data.map(mesa => {
+        const reservaMesa = responseReservas.data.find(r => r.mesa_id === mesa.id);
+        return {
           ...mesa,
           id: String(mesa.id),
-          reservadoPor: undefined,
-        }));
+          reservadoPor: reservaMesa?.nome_responsavel || 'Desconhecido',
+          data: reservaMesa?.data,
+          hora: reservaMesa?.hora,
+          qtd_pessoas: reservaMesa?.qtd_pessoas
+        };
+      });
 
-        const garconsRaw = responseGarcons.data;
+      // Gerar mesas atendidas aleatórias para garçons
+      const numerosMesas = mesasComReservas.map(m => m.numero);
+      function sortearMesas(n: number, disponiveis: number[]) {
+        const sorteadas: number[] = [];
+        const copia = [...disponiveis];
 
-        function sortearMesas(n: number, disponiveis: number[]) {
-          const sorteadas: number[] = [];
-          const copia = [...disponiveis];
-
-          for (let i = 0; i < n; i++) {
-            if (copia.length === 0) break;
-            const idx = Math.floor(Math.random() * copia.length);
-            sorteadas.push(copia[idx]);
-            copia.splice(idx, 1);
-          }
-          return sorteadas;
+        for (let i = 0; i < n; i++) {
+          if (copia.length === 0) break;
+          const idx = Math.floor(Math.random() * copia.length);
+          sorteadas.push(copia[idx]);
+          copia.splice(idx, 1);
         }
-
-        const numerosMesas = mesas.map(mesa => mesa.numero);
-
-        const garconsComMesas: Garcom[] = garconsRaw.map(garcom => ({
-          id: String(garcom.id),
-          nome: garcom.nome,
-          mesasAtendidas: sortearMesas(Math.floor(Math.random() * 2) + 1, numerosMesas),
-        }));
-
-        setMesasReservadas(mesas);
-        setGarcons(garconsComMesas);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        Alert.alert('Erro', 'Não foi possível carregar os dados.');
-      } finally {
-        setLoading(false);
+        return sorteadas;
       }
-    }
 
-    carregarDados();
-  }, []);
+      const garconsComMesas: Garcom[] = responseGarcons.data.map(garcom => ({
+        id: String(garcom.id),
+        nome: garcom.nome,
+        mesasAtendidas: sortearMesas(Math.floor(Math.random() * 2) + 1, numerosMesas),
+      }));
+
+      setMesasReservadas(mesasComReservas);
+      setGarcons(garconsComMesas);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  carregarDados();
+}, []);
+
 
   if (loading) {
     return (
@@ -80,7 +91,7 @@ export default function Gerente({ navigation }: Props) {
     );
   }
 
-  return (
+return (
     <View style={styles.container}>
       <Text style={styles.header}>Mesas Reservadas ({mesasReservadas.length})</Text>
       <FlatList
@@ -90,7 +101,14 @@ export default function Gerente({ navigation }: Props) {
         renderItem={({ item }) => (
           <View style={styles.mesaCard}>
             <Text style={styles.mesaNumero}>Mesa {item.numero}</Text>
-            {item.reservadoPor && <Text style={styles.mesaCliente}>Reservada por: {item.reservadoPor}</Text>}
+            {item.nome_responsavel && (
+              <>
+                <Text style={styles.mesaCliente}>Responsável: {item.nome_responsavel}</Text>
+                <Text style={styles.mesaCliente}>Data: {item.data?.replace(/-/g, '/')}</Text>
+                <Text style={styles.mesaCliente}>Hora: {item.hora}</Text>
+                <Text style={styles.mesaCliente}>Pessoas: {item.qtd_pessoas}</Text>
+              </>
+            )}
           </View>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma mesa reservada</Text>}
@@ -117,64 +135,76 @@ export default function Gerente({ navigation }: Props) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f9f9f9',
     padding: 16,
-     paddingTop: 60
   },
   header: {
     fontSize: 22,
-    fontWeight: '700',
-    marginVertical: 12,
+    fontWeight: 'bold',
     color: '#333',
+    marginTop: 16,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 6,
   },
   list: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   mesaCard: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 8,
-    marginBottom: 10,
+    backgroundColor: '#ADD8E6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   mesaNumero: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#007bff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#003366',
+    marginBottom: 6,
   },
   mesaCliente: {
-    marginTop: 4,
     fontSize: 14,
-    color: '#555',
+    color: '#004766',
+    marginBottom: 4,
+    fontWeight: 'bold',
   },
   garcomCard: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderLeftWidth: 5,
-    borderLeftColor: '#28a745',
+    backgroundColor: '#e9f7ef',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
   garcomNome: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#28a745',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 6,
   },
   garcomMesas: {
-    marginTop: 4,
     fontSize: 14,
-    color: '#555',
+    color: '#388e3c',
   },
   emptyText: {
-    color: '#888',
-    fontStyle: 'italic',
     textAlign: 'center',
-    marginVertical: 12,
+    color: '#999',
+    fontSize: 14,
+    marginTop: 24,
+    fontStyle: 'italic',
   },
 });
+  
