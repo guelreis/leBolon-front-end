@@ -96,7 +96,7 @@ export default function Atendente() {
     if (selectedMesa === null) return;
 
     if (isMesaConfirmada(selectedMesa)) {
-      // Cancelar reserva
+    
       try {
         const response = await api.get("/reservas");
         const reservas = response.data;
