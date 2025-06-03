@@ -192,22 +192,32 @@ const dataFormatada = info.data.replace(/\//g, "-")
                         Cancelar Reserva
                       </Text>
                     </TouchableOpacity>
+                                     <TouchableOpacity
+  style={[styles.closeButton, { backgroundColor: "#888", marginTop: 10 }]}
+  onPress={() => setModalVisible(false)}
+>
+  <Text style={{ color: "#fff", fontWeight: "bold" }}>Fechar</Text>
+</TouchableOpacity>
+                    
                   </>
                 ) : (
                   <>
                     <TextInput
-                      placeholder="Nome do responsável"
-                      value={info.nome_responsavel}
-                      onChangeText={(text) =>
-                        setInfo({ ...info, nome_responsavel: text })
-                      }
-                      style={styles.input}
-                    />
-                    <TextInput
+  placeholder="Nome do responsável"
+  placeholderTextColor="#000"
+  value={info.nome_responsavel}
+  onChangeText={(text) =>
+    setInfo({ ...info, nome_responsavel: text })
+  }
+  style={styles.input}
+/>
+
+<TextInput
   placeholder="Data (AAAA/MM/DD)"
+  placeholderTextColor="#000"
   value={info.data}
   onChangeText={(text) => {
-    let cleaned = text.replace(/\D/g, ""); 
+    let cleaned = text.replace(/\D/g, "");
     if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
 
     let masked = cleaned;
@@ -224,34 +234,38 @@ const dataFormatada = info.data.replace(/\//g, "-")
   style={styles.input}
 />
 
-                    <TextInput
-                      placeholder="Hora (HH:MM)"
-                      value={info.hora}
-                      onChangeText={(text) => {
-                        let cleaned = text.replace(/\D/g, "");
-                        if (cleaned.length > 4) {
-                          cleaned = cleaned.slice(0, 4);
-                        }
-                        if (cleaned.length > 2) {
-                          cleaned = cleaned.slice(0, 2) + ":" + cleaned.slice(2);
-                        }
-                        setInfo({ ...info, hora: cleaned });
-                      }}
-                      maxLength={5}
-                      keyboardType="numeric"
-                      style={styles.input}
-                    />
-                    <TextInput
-                      placeholder="Quantidade de pessoas"
-                      keyboardType="numeric"
-                      value={info.qtd_pessoas}
-                      onChangeText={(text) => {
-                        if (/^\d*$/.test(text)) {
-                          setInfo({ ...info, qtd_pessoas: text });
-                        }
-                      }}
-                      style={styles.input}
-                    />
+<TextInput
+  placeholder="Hora (HH:MM)"
+  placeholderTextColor="#000"
+  value={info.hora}
+  onChangeText={(text) => {
+    let cleaned = text.replace(/\D/g, "");
+    if (cleaned.length > 4) {
+      cleaned = cleaned.slice(0, 4);
+    }
+    if (cleaned.length > 2) {
+      cleaned = cleaned.slice(0, 2) + ":" + cleaned.slice(2);
+    }
+    setInfo({ ...info, hora: cleaned });
+  }}
+  maxLength={5}
+  keyboardType="numeric"
+  style={styles.input}
+/>
+
+<TextInput
+  placeholder="Quantidade de pessoas"
+  placeholderTextColor="#000"
+  keyboardType="numeric"
+  value={info.qtd_pessoas}
+  onChangeText={(text) => {
+    if (/^\d*$/.test(text)) {
+      setInfo({ ...info, qtd_pessoas: text });
+    }
+  }}
+  style={styles.input}
+/>
+
                     <TouchableOpacity
                       style={styles.closeButton}
                       onPress={confirmarOuCancelarMesa}
@@ -260,6 +274,13 @@ const dataFormatada = info.data.replace(/\//g, "-")
                         Criar Reserva
                       </Text>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+  style={[styles.closeButton, { backgroundColor: "#888", marginTop: 10 }]}
+  onPress={() => setModalVisible(false)}
+>
+  <Text style={{ color: "#fff", fontWeight: "bold" }}>Fechar</Text>
+</TouchableOpacity>
                   </>
                 )}
               </>

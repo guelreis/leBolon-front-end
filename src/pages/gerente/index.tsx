@@ -11,7 +11,6 @@ type Mesa = {
   qtd_pessoas?: number;
 };
 
-
 type Garcom = {
   id: string;
   nome: string;
@@ -19,7 +18,7 @@ type Garcom = {
 };
 
 type Props = {
-  navigation: any; 
+  navigation: any;
 };
 
 export default function Gerente({ navigation }: Props) {
@@ -27,60 +26,68 @@ export default function Gerente({ navigation }: Props) {
   const [garcons, setGarcons] = useState<Garcom[]>([]);
   const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  async function carregarDados() {
-    try {
-      const responseMesas = await api.get<Mesa[]>('/mesas/reservadas');
-      const responseReservas = await api.get<any[]>('/reservas');
-      const responseGarcons = await api.get<{ id: number; nome: string }[]>('/garcons');
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const responseMesas = await api.get<Mesa[]>('/mesas/reservadas');
+        const responseReservas = await api.get<any[]>('/reservas');
+        const responseGarcons = await api.get<{ id: number; nome: string }[]>('/garcons');
 
-      // Juntando as reservas com as mesas reservadas
-      const mesasComReservas: Mesa[] = responseMesas.data.map(mesa => {
-        const reservaMesa = responseReservas.data.find(r => r.mesa_id === mesa.id);
-        return {
-          ...mesa,
-          id: String(mesa.id),
-          reservadoPor: reservaMesa?.nome_responsavel || 'Desconhecido',
-          data: reservaMesa?.data,
-          hora: reservaMesa?.hora,
-          qtd_pessoas: reservaMesa?.qtd_pessoas
-        };
-      });
+        const mesasComReservas: Mesa[] = responseMesas.data.map(mesa => {
+          const reservaMesa = responseReservas.data.find(r => r.mesa_id === mesa.id);
+          return {
+            ...mesa,
+            id: String(mesa.id),
+            nome_responsavel: reservaMesa?.nome_responsavel || 'Desconhecido',
+            data: reservaMesa?.data,
+            hora: reservaMesa?.hora,
+            qtd_pessoas: reservaMesa?.qtd_pessoas,
+          };
+        });
 
-      // Gerar mesas atendidas aleatórias para garçons
-      const numerosMesas = mesasComReservas.map(m => m.numero);
-      function sortearMesas(n: number, disponiveis: number[]) {
-        const sorteadas: number[] = [];
-        const copia = [...disponiveis];
+        const numerosMesas = mesasComReservas.map(m => m.numero);
+        function sortearMesas(n: number, disponiveis: number[]) {
+          const sorteadas: number[] = [];
+          const copia = [...disponiveis];
 
-        for (let i = 0; i < n; i++) {
-          if (copia.length === 0) break;
-          const idx = Math.floor(Math.random() * copia.length);
-          sorteadas.push(copia[idx]);
-          copia.splice(idx, 1);
+          for (let i = 0; i < n; i++) {
+            if (copia.length === 0) break;
+            const idx = Math.floor(Math.random() * copia.length);
+            sorteadas.push(copia[idx]);
+            copia.splice(idx, 1);
+          }
+          return sorteadas;
         }
-        return sorteadas;
+
+        const garconsComMesas: Garcom[] = responseGarcons.data.map(garcom => ({
+          id: String(garcom.id),
+          nome: garcom.nome,
+          mesasAtendidas: sortearMesas(Math.floor(Math.random() * 2) + 1, numerosMesas),
+        }));
+
+        setMesasReservadas(mesasComReservas);
+        setGarcons(garconsComMesas);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        Alert.alert('Erro', 'Não foi possível carregar os dados.');
+      } finally {
+        setLoading(false);
       }
-
-      const garconsComMesas: Garcom[] = responseGarcons.data.map(garcom => ({
-        id: String(garcom.id),
-        nome: garcom.nome,
-        mesasAtendidas: sortearMesas(Math.floor(Math.random() * 2) + 1, numerosMesas),
-      }));
-
-      setMesasReservadas(mesasComReservas);
-      setGarcons(garconsComMesas);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados.');
-    } finally {
-      setLoading(false);
     }
+
+    carregarDados();
+  }, []);
+
+  function formatarData(data?: string): string {
+    if (!data) return '';
+    const parteData = data.slice(0, 10); // Pega só 'YYYY-MM-DD'
+    return parteData.replace(/-/g, '/'); // Troca '-' por '/'
   }
 
-  carregarDados();
-}, []);
-
+  function formatarHora(hora?: string): string {
+    if (!hora) return '';
+    return hora.slice(0, 5); // Pega 'HH:MM' de 'HH:MM:SS'
+  }
 
   if (loading) {
     return (
@@ -91,12 +98,12 @@ useEffect(() => {
     );
   }
 
-return (
+  return (
     <View style={styles.container}>
       <Text style={styles.header}>Mesas Reservadas ({mesasReservadas.length})</Text>
       <FlatList
         data={mesasReservadas}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`} // key única para evitar warning
         style={styles.list}
         renderItem={({ item }) => (
           <View style={styles.mesaCard}>
@@ -104,8 +111,8 @@ return (
             {item.nome_responsavel && (
               <>
                 <Text style={styles.mesaCliente}>Responsável: {item.nome_responsavel}</Text>
-                <Text style={styles.mesaCliente}>Data: {item.data?.replace(/-/g, '/')}</Text>
-                <Text style={styles.mesaCliente}>Hora: {item.hora}</Text>
+                <Text style={styles.mesaCliente}>Data: {formatarData(item.data)}</Text>
+                <Text style={styles.mesaCliente}>Hora: {formatarHora(item.hora)}</Text>
                 <Text style={styles.mesaCliente}>Pessoas: {item.qtd_pessoas}</Text>
               </>
             )}
@@ -134,7 +141,6 @@ return (
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -207,4 +213,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-  

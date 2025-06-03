@@ -191,9 +191,16 @@ export default function Garcom() {
               Cancelar presença
             </Text>
           </TouchableOpacity>
+
+                                           <TouchableOpacity
+            style={[styles.closeButton, { backgroundColor: "#888", marginTop: 10 }]}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Fechar</Text>
+          </TouchableOpacity>
         </>
       ) : (
-        // Mesa não reservada
+       
         <>
           <Text style={{ marginTop: 10 }}>Esta mesa está sem reserva.</Text>
           <TouchableOpacity
