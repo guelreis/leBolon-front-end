@@ -7,4 +7,4 @@
 - Membro 6: Miguel Reis- 12724115122
 - Membro 7: João Victor Queiroz Dias Menezes - 12724137785
 
-- [Relatório do Sistema (Word)](docs/Projeto%20de%20Sistema%20de%20Reserva%20de%20Mesas%20para%20Restaurante.docx)
+- [Relatório do Sistema (Word)](Projeto%20de%20Sistema%20de%20Reserva%20de%20Mesas%20para%20Restaurante.docx)
