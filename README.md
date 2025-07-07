@@ -7,3 +7,5 @@
 - Membro 7: João Victor Queiroz Dias Menezes - RA: 12724137785
 
  [Relatório do Sistema (Word)](Projeto%20de%20Sistema%20de%20Reserva%20de%20Mesas%20para%20Restaurante.docx)
+
+<img src="Le-Bolon.gif" />
