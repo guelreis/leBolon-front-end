@@ -1,4 +1,33 @@
--Integrantes-
+<div open align="center" >
+<h2>LeBolon - Aplicativo de Sistema de Reservas de Restaurante</h2>
+
+O LeBolon é uma aplicação cliente-servidor desenvolvida para gerenciar reservas de mesas em um restaurante. O sistema possui três tipos de usuários: Atendente de Reserva, Garçom e Gerente do Restaurante, cada um com funcionalidades específicas para cadastrar reservas, confirmar ocupações e gerar relatórios em tempo real.
+</div>
+
+<h3>Funcionalidades:</h3>
+
+- Atendente de Reserva: Criar, editar e cancelar reservas de mesas
+
+- Garçom: Confirmar a ocupação de mesas reservadas
+
+- Gerente: Visualizar relatórios de acompanhamento das reservas
+
+- Visualização em tempo real do status das mesas
+
+- Feedback imediato sobre operações realizadas
+
+- Interface intuitiva e responsiva
+
+<h3>Tecnologias Utilizadas:</h3>
+
+- Frontend: React Native com TypeScript
+
+- Bibliotecas: Axios para chamadas API, Expo para desenvolvimento
+
+- Ferramentas: Android Studio, Node.js, Git
+
+
+<h3>Integrantes</h3>
 
 - Membro 1: Miguel Reis - RA: 12724115122
 - Membro 2: Yule Lima Hohenfeld Lyra - RA: 12724134514
